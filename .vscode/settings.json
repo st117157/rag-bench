@@ -1,0 +1,60 @@
+{
+  // --- интерпретатор ---
+  // Путь к Python внутри виртуального окружения проекта.
+  // На Windows замените на: "${workspaceFolder}\\.venv\\Scripts\\python.exe"
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+
+  // Чтобы `from ragbench...` и `from config import ...` работали
+  // из любого файла, а Pylance не подчёркивал импорты красным.
+  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  "python.analysis.typeCheckingMode": "basic",
+
+  // Ключ из .env подхватывается автоматически при отладке.
+  "python.envFile": "${workspaceFolder}/.env",
+
+  // --- терминал ---
+  // Активировать .venv автоматически при открытии терминала,
+  // чтобы не забывать `source .venv/bin/activate`.
+  "python.terminal.activateEnvironment": true,
+  "terminal.integrated.cwd": "${workspaceFolder}",
+
+  // --- форматирование ---
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    // Автоформат yaml выключен намеренно: он ломает многострочные
+    // строки в questions.yaml и перемешивает ваши комментарии.
+    "editor.formatOnSave": false
+  },
+
+  // --- что прятать из дерева файлов ---
+  // Корпус — это 153 скачанных файла, в панели они только мешают.
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/*.pyc": true,
+    "data/corpus": true,
+    "data/index": true,
+    ".venv": true
+  },
+
+  // ...но искать по ним всё равно можно: полезно, когда проверяете,
+  // действительно ли ответ есть в документации. Ctrl+Shift+F по data/corpus
+  // — это, по сути, ручная версия grep-подхода из проекта.
+  "search.exclude": {
+    "**/__pycache__": true,
+    ".venv": true,
+    "results/raw_*.json": true
+  },
+
+  // --- мелочи, которые экономят нервы ---
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "editor.rulers": [88]
+}

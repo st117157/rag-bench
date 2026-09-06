@@ -1,0 +1,2 @@
+method,recall_at_5,precision,mrr,docs_sent,abstain_ok,latency_s,cost_per_q,build_s,cost_per_1k_q
+naive,1.0,0.667,0.667,2.0,0.5,0.058,0.00012,35.8,0.12

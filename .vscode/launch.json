@@ -1,0 +1,92 @@
+{
+  // Конфигурации запуска и отладки.
+  // Открываются по F5 или на вкладке "Run and Debug" (Ctrl+Shift+D).
+  //
+  // Главное, ради чего это нужно: точки останова. Поставьте красную точку
+  // на строке в grep_agent.py и запустите "Прогон: grep-агент" — увидите
+  // своими глазами, какие запросы придумывает модель и что находит.
+  // Это в разы полезнее, чем расставлять print().
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "1. Скачать корпус",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/01_download_corpus.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "2. Проверка корпуса (сколько чанков)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "ragbench.corpus",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "3. Быстрая проверка (3 вопроса, без денег)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval/run_eval.py",
+      "args": ["--methods", "naive", "--limit", "3", "--no-judge"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "4. Векторная ветка (naive + hybrid + reranked)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval/run_eval.py",
+      "args": ["--methods", "naive", "hybrid", "reranked", "--no-judge"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "5. Прогон: grep-агент (10 вопросов)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval/run_eval.py",
+      "args": ["--methods", "grep", "--limit", "10"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" },
+      // Останавливаться на исключениях, которые код не поймал:
+      // у агента их будет достаточно, пока вы его дорабатываете.
+      "justMyCode": true
+    },
+    {
+      "name": "6. Прогон: long-context",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval/run_eval.py",
+      "args": ["--methods", "longctx", "--limit", "5"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "7. ПОЛНЫЙ прогон (все подходы, с судьёй)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/eval/run_eval.py",
+      "args": [],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    },
+    {
+      "name": "Отладить текущий файл",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}" }
+    }
+  ]
+}

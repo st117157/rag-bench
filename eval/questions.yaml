@@ -1,0 +1,437 @@
+# =====================================================================
+# Набор вопросов для оценки. Сердце проекта.
+#
+# ПОЧЕМУ ВОПРОСЫ ПО-АНГЛИЙСКИ
+#
+# Корпус — англоязычная документация FastAPI. Если задавать вопросы
+# по-русски, ломается сразу два механизма:
+#
+#   1. BM25 ищет совпадения слов. Русское слово никогда не совпадёт
+#      с английским текстом, поэтому лексический поиск работал бы
+#      только на латинских идентификаторах (response_model и т.п.).
+#      Деление на lexical/semantic потеряло бы смысл.
+#   2. all-MiniLM-L6-v2 — англоязычная модель. На русских запросах
+#      её эмбеддинги заметно хуже, и вы мерили бы не качество подхода,
+#      а кросс-язычные способности конкретной модели.
+#
+# Поэтому question и gold_answer на английском — на языке корпуса.
+# Поле `ru` — перевод для чтения, в коде оно не используется.
+#
+# Отдельный проект «RAG на другом языке, чем корпус» тоже интересен,
+# но это ДРУГОЙ эксперимент: там меряется мультиязычность эмбеддингов,
+# и брать для него надо multilingual-e5 или похожую модель.
+# Упомяните это в README как осознанно отброшенное направление.
+#
+# ---------------------------------------------------------------------
+# ФОРМАТ ЗАПИСИ
+#   id           короткий идентификатор
+#   type         lexical | semantic | multihop | unanswerable
+#   question     вопрос (на нём работает поиск)
+#   ru           перевод вопроса, только для чтения человеком
+#   gold_sources файлы, где ответ реально есть. По ним считается recall@k
+#   gold_answer  эталон своими словами, 1-3 предложения. С ним сверяет судья
+#
+# ТИПЫ ВОПРОСОВ
+#   lexical      термин из вопроса буквально есть в документе.
+#                Тут должны выигрывать BM25 и grep
+#   semantic     вопрос описывает проблему другими словами, пересечения
+#                по значимым словам с документом нет.
+#                Тут должны выигрывать эмбеддинги
+#   multihop     ответ собирается минимум из двух файлов
+#   unanswerable ответа в корпусе нет. Проверяем честный отказ
+#
+# ВАЖНО ПРО КОРПУС
+# В документации FastAPI код примеров вынесен во внешние файлы, в тексте
+# стоит только ссылка вида {* ../../docs_src/... *}. Значит, в корпусе есть
+# ОПИСАНИЕ («примонтируйте StaticFiles»), но нет строки app.mount(...).
+# Поэтому gold_answer формулируется на уровне понятий и названий
+# параметров, а не точного синтаксиса.
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# LEXICAL (15) — слова вопроса есть в документе
+# ---------------------------------------------------------------------
+
+- id: q001
+  type: lexical
+  question: "What is BackgroundTasks used for in FastAPI?"
+  ru: "Для чего в FastAPI используется BackgroundTasks?"
+  gold_sources: ["tutorial__background-tasks.md"]
+  gold_answer: "It declares work that runs after the response is sent: you take a BackgroundTasks parameter and register the function with add_task."
+
+- id: q002
+  type: lexical
+  question: "What does the response_model parameter do?"
+  ru: "Что делает параметр response_model?"
+  gold_sources: ["tutorial__response-model.md"]
+  gold_answer: "It declares the Pydantic model of the response, so FastAPI validates, filters and documents the returned data according to it."
+
+- id: q003
+  type: lexical
+  question: "How do I set the status code of a path operation to 201?"
+  ru: "Как задать код ответа 201 для операции пути?"
+  gold_sources: ["tutorial__response-status-code.md"]
+  gold_answer: "Pass status_code to the path operation decorator; the status module provides named constants such as HTTP_201_CREATED."
+
+- id: q004
+  type: lexical
+  question: "How do I add a max_length validation to a query parameter?"
+  ru: "Как добавить проверку максимальной длины для query-параметра?"
+  gold_sources: ["tutorial__query-params-str-validations.md"]
+  gold_answer: "Annotate the parameter with Query inside Annotated and pass max_length to it."
+
+- id: q005
+  type: lexical
+  question: "How do I disable convert_underscores for a Header parameter?"
+  ru: "Как отключить convert_underscores у параметра Header?"
+  gold_sources: ["tutorial__header-params.md"]
+  gold_answer: "Set convert_underscores=False on Header. The docs warn that some proxies and servers reject headers containing underscores."
+
+- id: q006
+  type: lexical
+  question: "Why must the path /users/me be declared before /users/{user_id}?"
+  ru: "Почему путь /users/me надо объявлять раньше /users/{user_id}?"
+  gold_sources: ["tutorial__path-params.md"]
+  gold_answer: "Path operations are evaluated in order, so /users/{user_id} would also match /users/me and treat 'me' as the user_id value."
+
+- id: q007
+  type: lexical
+  question: "What does the jsonable_encoder function do?"
+  ru: "Что делает функция jsonable_encoder?"
+  gold_sources: ["tutorial__encoder.md"]
+  gold_answer: "It converts objects such as Pydantic models and datetime into JSON compatible types: a datetime becomes an ISO format string, a model becomes a dict."
+
+- id: q008
+  type: lexical
+  question: "How is exclude_unset used for partial updates with PATCH?"
+  ru: "Как использовать exclude_unset для частичного обновления через PATCH?"
+  gold_sources: ["tutorial__body-updates.md"]
+  gold_answer: "Call model_dump(exclude_unset=True) to get only the fields the client actually sent, then apply them onto the stored data without overwriting the rest with defaults."
+
+- id: q009
+  type: lexical
+  question: "How do I mark a path operation as deprecated?"
+  ru: "Как пометить операцию пути как устаревшую?"
+  gold_sources: ["tutorial__path-operation-configuration.md"]
+  gold_answer: "Pass the deprecated parameter to the path operation decorator; the endpoint keeps working but is shown as deprecated in the interactive docs."
+
+- id: q010
+  type: lexical
+  question: "What is the lifespan parameter of the FastAPI app?"
+  ru: "Что такое параметр lifespan у приложения FastAPI?"
+  gold_sources: ["advanced__events.md"]
+  gold_answer: "It takes an async context manager with a yield: code before the yield runs at startup, code after it runs at shutdown. The older on_event startup and shutdown handlers are deprecated."
+
+- id: q011
+  type: lexical
+  question: "How do I serve static files with StaticFiles?"
+  ru: "Как раздавать статические файлы через StaticFiles?"
+  gold_sources: ["tutorial__static-files.md"]
+  gold_answer: "Import StaticFiles and mount a StaticFiles() instance on a specific path; mounting attaches an independent application under that sub path."
+
+- id: q012
+  type: lexical
+  question: "What is APIRouter used for?"
+  ru: "Для чего нужен APIRouter?"
+  gold_sources: ["tutorial__bigger-applications.md"]
+  gold_answer: "It lets you declare path operations in separate modules and then attach them to the main application with include_router."
+
+- id: q013
+  type: lexical
+  question: "How do I return an HTMLResponse from a path operation?"
+  ru: "Как вернуть HTMLResponse из операции пути?"
+  gold_sources: ["advanced__custom-response.md"]
+  gold_answer: "Either set response_class=HTMLResponse on the decorator, or return an HTMLResponse object directly from the function."
+
+- id: q014
+  type: lexical
+  question: "What are the attributes and methods of UploadFile?"
+  ru: "Какие атрибуты и методы есть у UploadFile?"
+  gold_sources: ["tutorial__request-files.md"]
+  gold_answer: "UploadFile exposes filename, content_type and file, which is a SpooledTemporaryFile, plus async methods read, write, seek and close."
+
+- id: q015
+  type: lexical
+  question: "In what order do multiple middleware run?"
+  ru: "В каком порядке выполняются несколько middleware?"
+  gold_sources: ["tutorial__middleware.md"]
+  gold_answer: "Middleware form a stack: the last one added is the outermost. On the request path the outermost runs first, on the response path it runs last."
+
+
+# ---------------------------------------------------------------------
+# SEMANTIC (15) — задача описана другими словами
+#
+# Проверка каждого вопроса из этой группы: открыть файл из gold_sources
+# и поискать по нему значимые слова вопроса. Ничего не найдено —
+# вопрос удался. Скрипт scripts/02_check_questions.py делает это сам.
+# ---------------------------------------------------------------------
+
+- id: q016
+  type: semantic
+  question: "A page served from a different site cannot call my API, the browser refuses. How do I allow that?"
+  ru: "Страница с другого сайта не может обратиться к моему API, браузер запрещает. Как это разрешить?"
+  gold_sources: ["tutorial__cors.md"]
+  gold_answer: "Add CORSMiddleware and list the permitted origins in allow_origins."
+
+- id: q017
+  type: semantic
+  question: "Where should I keep the database password so that it never appears inside my source files?"
+  ru: "Где хранить пароль от базы, чтобы он не оказался в исходниках?"
+  gold_sources: ["advanced__settings.md"]
+  gold_answer: "Read configuration from environment variables using pydantic-settings: declare a BaseSettings class and optionally load values from a .env file."
+
+- id: q018
+  type: semantic
+  question: "How do I answer the caller at once and let the lengthy part finish later?"
+  ru: "Как ответить клиенту сразу, а долгую часть доделать потом?"
+  gold_sources: ["tutorial__background-tasks.md"]
+  gold_answer: "Declare a BackgroundTasks parameter and register the function with add_task; it runs after the response has been returned."
+
+- id: q019
+  type: semantic
+  question: "The requested record is absent. How do I return a proper failure to the client?"
+  ru: "Запрошенной записи нет. Как вернуть клиенту корректную ошибку?"
+  gold_sources: ["tutorial__handling-errors.md"]
+  gold_answer: "Raise HTTPException with status_code 404 and a detail message; FastAPI turns it into a proper JSON error response."
+
+- id: q020
+  type: semantic
+  question: "Many routes repeat identical setup. How do I declare that setup a single time?"
+  ru: "Многие маршруты повторяют одинаковую подготовку. Как объявить её один раз?"
+  gold_sources: ["tutorial__dependencies__index.md"]
+  gold_answer: "Use the dependency injection system: write the shared logic as a function and declare it with Depends in every path operation that needs it."
+
+- id: q021
+  type: semantic
+  question: "How do I verify my routes automatically without starting a live server?"
+  ru: "Как автоматически проверять маршруты, не поднимая работающий сервер?"
+  gold_sources: ["tutorial__testing.md"]
+  gold_answer: "Use TestClient from fastapi.testclient: wrap the app in it and call the endpoints directly with normal pytest assertions."
+
+- id: q022
+  type: semantic
+  question: "I want to answer with a rendered page built from a layout file, not with data. How?"
+  ru: "Хочу отвечать отрисованной страницей из файла разметки, а не данными. Как?"
+  gold_sources: ["advanced__templates.md"]
+  gold_answer: "Use Jinja2Templates: install jinja2, point Jinja2Templates at the directory, and return TemplateResponse from the path operation."
+
+- id: q023
+  type: semantic
+  question: "My answer is enormous and building it fully in memory is not an option. How do I send it piece by piece?"
+  ru: "Ответ огромный, собирать его целиком в памяти нельзя. Как отдавать его по частям?"
+  gold_sources: ["advanced__stream-data.md"]
+  gold_answer: "Return a StreamingResponse over a generator that yields the content in chunks, so nothing has to be built in memory at once."
+
+- id: q024
+  type: semantic
+  question: "How do I find out which account is behind the incoming call?"
+  ru: "Как узнать, от какой учётной записи пришёл запрос?"
+  gold_sources: ["tutorial__security__get-current-user.md"]
+  gold_answer: "Declare a dependency that receives the token, decodes it and returns the corresponding user, then depend on it in the path operation."
+
+- id: q025
+  type: semantic
+  question: "How do I make the generated documentation display a filled in sample payload?"
+  ru: "Как сделать, чтобы в сгенерированной документации показывался заполненный пример?"
+  gold_sources: ["tutorial__schema-extra-example.md"]
+  gold_answer: "Declare examples in the JSON Schema of the model, either through model_config json_schema_extra or via the examples argument of Field."
+
+- id: q026
+  type: semantic
+  question: "My incoming payload holds a collection of smaller structures inside one of its fields. How do I describe it?"
+  ru: "Во входящих данных внутри одного поля лежит набор структур поменьше. Как это описать?"
+  gold_sources: ["tutorial__body-nested-models.md"]
+  gold_answer: "Declare a separate Pydantic model for the inner structure and use it as the type parameter of a list attribute in the outer model."
+
+- id: q027
+  type: semantic
+  question: "How do I pause execution at a chosen line and inspect variables while my app is running?"
+  ru: "Как остановиться на нужной строке и посмотреть переменные во время работы приложения?"
+  gold_sources: ["tutorial__debugging.md"]
+  gold_answer: "Start the server from inside your own code by calling uvicorn.run under the __main__ guard, then launch that file from the debugger."
+
+- id: q028
+  type: semantic
+  question: "One machine has many cores but my app only loads one of them. How do I use the rest?"
+  ru: "На машине много ядер, но приложение грузит только одно. Как задействовать остальные?"
+  gold_sources: ["deployment__server-workers.md"]
+  gold_answer: "Run several worker processes, for example with the workers option of the server or by starting multiple containers behind a load balancer."
+
+- id: q029
+  type: semantic
+  question: "How do I change the title and release number displayed at the top of the generated docs?"
+  ru: "Как поменять заголовок и номер выпуска в шапке сгенерированной документации?"
+  gold_sources: ["tutorial__metadata.md"]
+  gold_answer: "Pass title, version and description to the FastAPI application; they end up in the OpenAPI schema and in the docs UI."
+
+- id: q030
+  type: semantic
+  question: "How do I write my data somewhere permanent and read it back afterwards?"
+  ru: "Как записать данные во что-то постоянное и потом прочитать обратно?"
+  gold_sources: ["tutorial__sql-databases.md"]
+  gold_answer: "Use SQLModel: declare table models, create the engine and tables, and get a session per request through a dependency."
+
+
+# ---------------------------------------------------------------------
+# MULTIHOP (10) — ответ разорван между файлами
+# ---------------------------------------------------------------------
+
+- id: q031
+  type: multihop
+  question: "How do I deploy behind a reverse proxy that strips a path prefix, while still serving HTTPS correctly?"
+  ru: "Как развернуть приложение за прокси, срезающим префикс пути, сохранив корректный HTTPS?"
+  gold_sources: ["advanced__behind-a-proxy.md", "deployment__https.md"]
+  gold_answer: "Set root_path to the stripped prefix and enable handling of the forwarded headers; TLS itself is terminated on the proxy, with certificates usually issued by Let's Encrypt."
+
+- id: q032
+  type: multihop
+  question: "How do I split the app into modules and apply one dependency to every route at once?"
+  ru: "Как разбить приложение на модули и применить одну зависимость ко всем маршрутам сразу?"
+  gold_sources:
+    - "tutorial__bigger-applications.md"
+    - "tutorial__dependencies__global-dependencies.md"
+  gold_answer: "Declare routes with APIRouter in separate modules and pass the shared dependency through the dependencies parameter of the FastAPI application so it applies to all path operations."
+
+- id: q033
+  type: multihop
+  question: "How do I accept an uploaded file together with ordinary form fields in one request?"
+  ru: "Как принять в одном запросе загружаемый файл вместе с обычными полями формы?"
+  gold_sources: ["tutorial__request-files.md", "tutorial__request-forms-and-files.md"]
+  gold_answer: "Declare File and Form parameters in the same function; the body arrives as multipart form data, which requires python-multipart to be installed."
+
+- id: q034
+  type: multihop
+  question: "How do I set a cookie on the response and read it back on a later request?"
+  ru: "Как установить cookie в ответе и прочитать её в следующем запросе?"
+  gold_sources: ["advanced__response-cookies.md", "tutorial__cookie-params.md"]
+  gold_answer: "Declare a Response parameter and set the cookie on it, or return a Response directly; to read it back declare a parameter with Cookie."
+
+- id: q035
+  type: multihop
+  question: "How do I open a database pool at startup but hand out and close a session per request?"
+  ru: "Как открыть пул к базе при старте, но выдавать и закрывать сессию на каждый запрос?"
+  gold_sources:
+    - "advanced__events.md"
+    - "tutorial__dependencies__dependencies-with-yield.md"
+  gold_answer: "Create the pool inside lifespan at startup and close it at shutdown, while a dependency with yield provides one session per request and closes it in the code after the yield."
+
+- id: q036
+  type: multihop
+  question: "How do I restrict an endpoint by OAuth2 scopes and then test it with an overridden dependency?"
+  ru: "Как ограничить эндпоинт по OAuth2-скоупам и протестировать его с подменённой зависимостью?"
+  gold_sources:
+    - "advanced__security__oauth2-scopes.md"
+    - "advanced__testing-dependencies.md"
+  gold_answer: "Require the scopes through Security with a scopes list and verify them in the dependency; in tests replace that dependency using app.dependency_overrides."
+
+- id: q037
+  type: multihop
+  question: "How do I return a trimmed output model and also document an extra status code for the same endpoint?"
+  ru: "Как отдавать урезанную модель ответа и при этом описать дополнительный код ответа?"
+  gold_sources: ["tutorial__extra-models.md", "advanced__additional-responses.md"]
+  gold_answer: "Declare a separate model without the private fields and set it as response_model, then describe the extra status codes through the responses parameter of the decorator."
+
+- id: q038
+  type: multihop
+  question: "How do I issue a JWT on login and then resolve the current user from it?"
+  ru: "Как выдать JWT при входе и потом определить по нему текущего пользователя?"
+  gold_sources:
+    - "tutorial__security__oauth2-jwt.md"
+    - "tutorial__security__get-current-user.md"
+  gold_answer: "Verify the password on the token endpoint and sign a JWT, then decode that token inside a dependency and look up the user, depending on it in protected path operations."
+
+- id: q039
+  type: multihop
+  question: "How many worker processes should a container run, and how is the image built for FastAPI?"
+  ru: "Сколько воркеров запускать в контейнере и как собирается образ для FastAPI?"
+  gold_sources: ["deployment__docker.md", "deployment__server-workers.md"]
+  gold_answer: "Build an image that runs the server as its command and normally keep a single process per container, scaling by running more containers rather than more workers inside one."
+
+- id: q040
+  type: multihop
+  question: "How do I give every request its own database session when using SQLModel?"
+  ru: "Как выдавать каждому запросу собственную сессию базы при использовании SQLModel?"
+  gold_sources:
+    - "tutorial__sql-databases.md"
+    - "tutorial__dependencies__dependencies-with-yield.md"
+  gold_answer: "Declare a dependency with yield that opens a SQLModel Session, yields it to the path operation and closes it afterwards, then depend on it in every route that touches the database."
+
+
+# ---------------------------------------------------------------------
+# UNANSWERABLE (10) — ответа в корпусе нет
+#
+# Все вопросы намеренно правдоподобны и касаются соседних тем.
+# Слишком очевидные («какая столица Франции») не годятся: система
+# откажется на них тривиально, и метрика ничего не покажет.
+# ---------------------------------------------------------------------
+
+- id: q041
+  type: unanswerable
+  question: "Which built-in decorator enables request rate limiting in FastAPI?"
+  ru: "Каким встроенным декоратором включается ограничение частоты запросов?"
+  gold_sources: []
+  gold_answer: "FastAPI has no built-in rate limiting and the documentation describes no such decorator."
+
+- id: q042
+  type: unanswerable
+  question: "How do I turn on built-in gRPC support in a FastAPI application?"
+  ru: "Как включить встроенную поддержку gRPC?"
+  gold_sources: []
+  gold_answer: "FastAPI is built on HTTP and ASGI; the documentation describes no built-in gRPC support."
+
+- id: q043
+  type: unanswerable
+  question: "How do I enable automatic response caching using FastAPI itself?"
+  ru: "Как включить автоматическое кэширование ответов средствами самого FastAPI?"
+  gold_sources: []
+  gold_answer: "There is no built-in response caching mechanism in FastAPI and the documentation does not describe one."
+
+- id: q044
+  type: unanswerable
+  question: "Where can I download the official FastAPI mobile SDK for iOS?"
+  ru: "Где скачать официальный мобильный SDK FastAPI для iOS?"
+  gold_sources: []
+  gold_answer: "No such SDK exists and the documentation says nothing about it."
+
+- id: q045
+  type: unanswerable
+  question: "How do I run database migrations with the migration engine built into FastAPI?"
+  ru: "Как запускать миграции базы встроенным механизмом FastAPI?"
+  gold_sources: []
+  gold_answer: "FastAPI has no migration engine of its own and the documentation does not cover migrations."
+
+- id: q046
+  type: unanswerable
+  question: "How much does official paid FastAPI support cost and how do I purchase it?"
+  ru: "Сколько стоит официальная платная поддержка FastAPI и как её купить?"
+  gold_sources: []
+  gold_answer: "The documentation describes no such paid support offering."
+
+- id: q047
+  type: unanswerable
+  question: "Which built-in scheduler runs a FastAPI job every hour on a cron schedule?"
+  ru: "Какой встроенный планировщик запускает задачу раз в час по расписанию?"
+  gold_sources: []
+  gold_answer: "FastAPI has no scheduler. BackgroundTasks runs work right after a response, which is not scheduled execution."
+
+- id: q048
+  type: unanswerable
+  question: "How do I enable the built-in admin panel for managing data?"
+  ru: "Как включить встроенную админ-панель для управления данными?"
+  gold_sources: []
+  gold_answer: "FastAPI ships no admin panel and the documentation does not mention one."
+
+- id: q049
+  type: unanswerable
+  question: "How do I configure the built-in Kafka connector in FastAPI?"
+  ru: "Как настроить встроенный коннектор Kafka?"
+  gold_sources: []
+  gold_answer: "There is no built-in Kafka connector in FastAPI and the documentation does not describe one."
+
+- id: q050
+  type: unanswerable
+  question: "What is the licence price of FastAPI Enterprise for one hundred developers?"
+  ru: "Сколько стоит лицензия FastAPI Enterprise на сто разработчиков?"
+  gold_sources: []
+  gold_answer: "No such product exists and nothing about it appears in the documentation."

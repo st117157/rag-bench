@@ -1,0 +1,53 @@
+{
+  // Задачи запускаются через Ctrl+Shift+P -> "Tasks: Run Task".
+  // В отличие от launch.json здесь нет отладчика — просто команды,
+  // которые не хочется набирать руками по десять раз.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Установка: создать .venv и поставить зависимости",
+      "type": "shell",
+      "command": "python -m venv .venv && .venv/bin/pip install -r requirements.txt",
+      "windows": {
+        "command": "python -m venv .venv; .venv\\Scripts\\pip install -r requirements.txt"
+      },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Данные: скачать корпус документации",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} scripts/01_download_corpus.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "Данные: пересобрать индекс с нуля",
+      // Нужно каждый раз, когда меняете параметры чанкования в config.py.
+      // Забыть про это — классическая ошибка: вы правите CHUNK_SIZE,
+      // а метрики не двигаются, потому что читается старый кэш.
+      "type": "shell",
+      "command": "rm -rf data/index",
+      "windows": { "command": "Remove-Item -Recurse -Force data\\index" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Прогон: быстрая проверка",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} eval/run_eval.py --methods naive --limit 3 --no-judge",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Прогон: полный",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} eval/run_eval.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "Проверка: линтер",
+      "type": "shell",
+      "command": "${command:python.interpreterPath} -m ruff check .",
+      "problemMatcher": []
+    }
+  ]
+}

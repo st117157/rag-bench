@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+data/corpus/
+data/index/
+# Сырые выгрузки и промежуточные файлы прогонов: они большие,
+# пересоздаются любым запуском и в репозитории не нужны.
+# Шаблон с ** покрывает и results/, и вложенный results/archive/.
+results/**/raw_*.json
+results/**/partial_*.json
+.venv/
+venv/
